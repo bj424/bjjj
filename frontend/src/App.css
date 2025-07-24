@@ -16,10 +16,10 @@
   overflow: hidden;
 }
 
-/* Card Deck Pile - Top Right */
+/* Card Deck Pile - Top Right - Position ajustée */
 .card-deck {
   position: absolute;
-  top: 20px;
+  top: 80px;  /* Baissé de 60px pour éviter le bouton portefeuille */
   right: 20px;
   z-index: 1000;
 }
