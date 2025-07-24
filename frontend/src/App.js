@@ -133,7 +133,7 @@ const BlackjackGame = () => {
     }
   };
 
-  // Tirer (Hit) action - simplifié
+  // Tirer (Hit) action - Animation complète depuis la pioche
   const tirer = async () => {
     if (!gameId || isAnimating || isDistributing) return;
     
@@ -144,20 +144,43 @@ const BlackjackGame = () => {
         action: "hit"
       });
       
-      // Animate new card from deck
+      const newCard = response.data.player_cards[response.data.player_cards.length - 1];
+      
+      // Étape 1: Ajouter la carte en vol (face cachée)
+      setVisibleCards(prev => ({
+        ...prev,
+        player: [...prev.player, { ...newCard, isTraveling: true }]
+      }));
+      
+      // Étape 2: Après le vol, retourner la carte (face visible)
       setTimeout(() => {
-        const newCard = response.data.player_cards[response.data.player_cards.length - 1];
-        setVisibleCards(prev => ({
-          ...prev,
-          player: [...prev.player, newCard]
-        }));
+        const cardIndex = visibleCards.player.length;
+        setVisibleCards(prev => {
+          const newVisible = { ...prev };
+          newVisible.player[cardIndex] = { 
+            ...newCard, 
+            isTraveling: false, 
+            isFlipping: true 
+          };
+          return newVisible;
+        });
         
+        // Étape 3: Finir l'animation de retournement
         setTimeout(() => {
+          setVisibleCards(prev => {
+            const newVisible = { ...prev };
+            newVisible.player[cardIndex] = { 
+              ...newCard, 
+              isFlipping: false 
+            };
+            return newVisible;
+          });
+          
           setGameState(response.data);
           setBalance(response.data.balance);
           setIsAnimating(false);
           
-          // Show result if game ended (but only after seeing the card)
+          // Show result if game ended
           if (response.data.game_status !== "playing") {
             // If player busts, reveal dealer's hidden card
             if (response.data.game_status === "player_bust") {
@@ -172,8 +195,8 @@ const BlackjackGame = () => {
             }
             setTimeout(() => setShowResult(true), 800);
           }
-        }, 200);
-      }, 300);
+        }, 300); // Fin du retournement
+      }, 400); // Fin du vol
       
     } catch (error) {
       console.error("Error hitting:", error);
