@@ -262,7 +262,7 @@
 
 /* Realistic Card Animations - Cards start hidden and fly from deck */
 .card-dealing {
-  animation: cardDealFromDeck 500ms cubic-bezier(0.26, 0.8, 0.48, 1);
+  animation: cardDealFromDeck 400ms cubic-bezier(0.26, 0.8, 0.48, 1);
   transform-origin: top right;
 }
 
@@ -280,11 +280,9 @@
   }
 }
 
-/* Card Flipping Animation */
+/* Card Flipping Animation - Only applies when card should flip */
 .card-flipping {
-  animation: cardFlip 200ms ease-in-out;
-  animation-delay: 450ms;
-  animation-fill-mode: backwards;
+  animation: cardFlip 300ms ease-in-out;
 }
 
 @keyframes cardFlip {
