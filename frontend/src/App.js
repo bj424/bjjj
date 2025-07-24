@@ -204,7 +204,7 @@ const BlackjackGame = () => {
     }
   };
 
-  // Rester (Stand) action
+  // Rester (Stand) action - Animation complète pour toutes les cartes du croupier
   const rester = async () => {
     if (!gameId || isAnimating || isDistributing) return;
     
@@ -215,7 +215,7 @@ const BlackjackGame = () => {
         action: "stand"
       });
       
-      // First reveal dealer's hidden card
+      // First reveal dealer's hidden card (no animation, just flip)
       setTimeout(() => {
         setVisibleCards(prev => ({
           ...prev,
@@ -224,27 +224,59 @@ const BlackjackGame = () => {
           )
         }));
         
-        // Then add any additional dealer cards one by one
+        // Then add any additional dealer cards one by one with full animation
         const additionalCards = response.data.dealer_cards.slice(2);
         
         if (additionalCards.length > 0) {
+          // Animer chaque carte additionnelle depuis la pioche
           additionalCards.forEach((card, index) => {
             setTimeout(() => {
+              // Étape 1: Ajouter carte en vol (face cachée)
               setVisibleCards(prev => ({
                 ...prev,
-                dealer: [...prev.dealer, card]
+                dealer: [...prev.dealer, { ...card, isTraveling: true }]
               }));
-            }, (index + 1) * 400);
+              
+              // Étape 2: Après le vol, retourner la carte
+              setTimeout(() => {
+                const cardIndex = visibleCards.dealer.length + index;
+                setVisibleCards(prev => {
+                  const newVisible = { ...prev };
+                  const lastIndex = newVisible.dealer.length - 1;
+                  newVisible.dealer[lastIndex] = { 
+                    ...card, 
+                    isTraveling: false, 
+                    isFlipping: true 
+                  };
+                  return newVisible;
+                });
+                
+                // Étape 3: Finir l'animation de retournement
+                setTimeout(() => {
+                  setVisibleCards(prev => {
+                    const newVisible = { ...prev };
+                    const lastIndex = newVisible.dealer.length - 1;
+                    newVisible.dealer[lastIndex] = { 
+                      ...card, 
+                      isFlipping: false 
+                    };
+                    return newVisible;
+                  });
+                }, 300); // Fin du retournement
+              }, 400); // Fin du vol
+              
+            }, index * 800); // 800ms entre chaque carte du croupier
           });
         }
         
         // Update game state and show result after all animations
+        const totalAnimationTime = additionalCards.length * 800 + 800;
         setTimeout(() => {
           setGameState(response.data);
           setBalance(response.data.balance);
           setIsAnimating(false);
           setTimeout(() => setShowResult(true), 600);
-        }, additionalCards.length * 400 + 800);
+        }, totalAnimationTime);
         
       }, 500);
       
