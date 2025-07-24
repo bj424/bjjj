@@ -135,7 +135,7 @@ const BlackjackGame = () => {
     }
   };
 
-  // Tirer (Hit) action
+  // Tirer (Hit) action with improved card animation
   const tirer = async () => {
     if (!gameId || isAnimating || isDistributing) return;
     
@@ -146,15 +146,36 @@ const BlackjackGame = () => {
         action: "hit"
       });
       
-      // Animate new card from deck
+      // Animate new card from deck - starts face down, then flips
+      const newCard = response.data.player_cards[response.data.player_cards.length - 1];
+      
+      // Add card as traveling (face down)
+      setVisibleCards(prev => ({
+        ...prev,
+        player: [...prev.player, { ...newCard, isTraveling: true }]
+      }));
+      
+      // After travel animation, flip the card
       setTimeout(() => {
-        const newCard = response.data.player_cards[response.data.player_cards.length - 1];
-        setVisibleCards(prev => ({
-          ...prev,
-          player: [...prev.player, newCard]
-        }));
+        const cardIndex = visibleCards.player.length;
+        setVisibleCards(prev => {
+          const newVisible = { ...prev };
+          newVisible.player[cardIndex] = { 
+            ...newCard, 
+            isTraveling: false, 
+            isFlipping: true 
+          };
+          return newVisible;
+        });
         
+        // Remove flipping flag and update game state
         setTimeout(() => {
+          setVisibleCards(prev => {
+            const newVisible = { ...prev };
+            newVisible.player[cardIndex] = { ...newCard, isFlipping: false };
+            return newVisible;
+          });
+          
           setGameState(response.data);
           setBalance(response.data.balance);
           setIsAnimating(false);
@@ -163,8 +184,8 @@ const BlackjackGame = () => {
           if (response.data.game_status !== "playing") {
             setTimeout(() => setShowResult(true), 800);
           }
-        }, 200);
-      }, 300);
+        }, 300);
+      }, 400);
       
     } catch (error) {
       console.error("Error hitting:", error);
