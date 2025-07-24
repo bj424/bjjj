@@ -222,7 +222,7 @@ const BlackjackGame = () => {
     }
   };
 
-  // Card component with realistic animations
+  // Card component with realistic animations - Cards travel face down, then flip
   const Card = ({ card, isHidden = false, isDealer = false, index = 0, isWinning = false, isDistributing = false }) => {
     const getCardSymbol = (suit) => {
       const symbols = {
@@ -238,12 +238,15 @@ const BlackjackGame = () => {
       return suit === "hearts" || suit === "diamonds" ? "#E74C3C" : "#2C3E50";
     };
 
-    if (isHidden || card?.isHidden) {
+    // Show card back during travel or if explicitly hidden
+    const shouldShowBack = card?.isTraveling || isHidden || card?.isHidden;
+
+    if (shouldShowBack) {
       return (
         <div 
-          className={`card card-back ${isDistributing ? 'card-dealing' : ''}`}
+          className={`card card-back ${isDistributing || card?.isTraveling ? 'card-dealing' : ''}`}
           style={{ 
-            animationDelay: `${index * 500}ms`,
+            animationDelay: `${index * 600}ms`,
             zIndex: 10 - index 
           }}
         >
@@ -254,11 +257,12 @@ const BlackjackGame = () => {
       );
     }
 
+    // Show face up card with flipping animation if needed
     return (
       <div 
-        className={`card ${isDistributing ? 'card-dealing card-flipping' : ''} ${isWinning ? 'card-winning' : ''}`}
+        className={`card ${isDistributing || card?.isTraveling ? 'card-dealing' : ''} ${card?.isFlipping ? 'card-flipping' : ''} ${isWinning ? 'card-winning' : ''}`}
         style={{ 
-          animationDelay: `${index * 500}ms`,
+          animationDelay: `${index * 600}ms`,
           zIndex: 10 - index,
           color: getCardColor(card.suit)
         }}
