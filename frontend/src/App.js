@@ -17,7 +17,7 @@ const BlackjackGame = () => {
   const [visibleCards, setVisibleCards] = useState({ player: [], dealer: [] });
   const [editingBalance, setEditingBalance] = useState(false);
 
-  // Simulate realistic card distribution - Cards are face down during travel, then flip
+  // Simulate realistic card distribution - Toutes les cartes partent face cachée puis se retournent
   const distributeCards = (cards, dealerCards) => {
     setIsDistributing(true);
     setVisibleCards({ player: [], dealer: [] });
@@ -34,26 +34,70 @@ const BlackjackGame = () => {
     
     distributionOrder.forEach((deal, index) => {
       setTimeout(() => {
+        // D'abord ajouter la carte face cachée (pendant le vol)
         setVisibleCards(prev => {
           const newVisible = { ...prev };
           if (deal.target === 'player') {
-            newVisible.player = [...newVisible.player, cards[deal.cardIndex]];
+            newVisible.player = [...newVisible.player, { ...cards[deal.cardIndex], isTraveling: true }];
           } else {
-            // Dealer's second card stays hidden during game
-            const card = dealerCards[deal.cardIndex];
-            const isHidden = !deal.faceUp;
-            newVisible.dealer = [...newVisible.dealer, { ...card, isHidden }];
+            newVisible.dealer = [...newVisible.dealer, { ...dealerCards[deal.cardIndex], isTraveling: true }];
           }
           return newVisible;
         });
+        
+        // Après le vol, retourner la carte selon la règle
+        setTimeout(() => {
+          setVisibleCards(prev => {
+            const newVisible = { ...prev };
+            if (deal.target === 'player') {
+              const lastIndex = newVisible.player.length - 1;
+              newVisible.player[lastIndex] = { 
+                ...cards[deal.cardIndex], 
+                isTraveling: false, 
+                isFlipping: true 
+              };
+            } else {
+              const lastIndex = newVisible.dealer.length - 1;
+              newVisible.dealer[lastIndex] = { 
+                ...dealerCards[deal.cardIndex], 
+                isTraveling: false, 
+                isFlipping: deal.faceUp,
+                isHidden: !deal.faceUp
+              };
+            }
+            return newVisible;
+          });
+          
+          // Finir l'animation de retournement
+          setTimeout(() => {
+            setVisibleCards(prev => {
+              const newVisible = { ...prev };
+              if (deal.target === 'player') {
+                const lastIndex = newVisible.player.length - 1;
+                newVisible.player[lastIndex] = { 
+                  ...newVisible.player[lastIndex], 
+                  isFlipping: false 
+                };
+              } else {
+                const lastIndex = newVisible.dealer.length - 1;
+                newVisible.dealer[lastIndex] = { 
+                  ...newVisible.dealer[lastIndex], 
+                  isFlipping: false 
+                };
+              }
+              return newVisible;
+            });
+          }, 300);
+          
+        }, 400); // Retournement après 400ms de vol
         
         // End distribution after last card
         if (index === distributionOrder.length - 1) {
           setTimeout(() => {
             setIsDistributing(false);
-          }, 300);
+          }, 800);
         }
-      }, index * 600); // 600ms between each card
+      }, index * 600); // 600ms entre chaque carte
     });
   };
 
