@@ -34,72 +34,26 @@ const BlackjackGame = () => {
     
     distributionOrder.forEach((deal, index) => {
       setTimeout(() => {
-        // First add card as face down (during travel)
         setVisibleCards(prev => {
           const newVisible = { ...prev };
           if (deal.target === 'player') {
-            const card = { ...cards[deal.cardIndex], isTraveling: true };
-            newVisible.player = [...newVisible.player, card];
+            newVisible.player = [...newVisible.player, cards[deal.cardIndex]];
           } else {
-            const card = { ...dealerCards[deal.cardIndex], isTraveling: true };
-            newVisible.dealer = [...newVisible.dealer, card];
+            // Dealer's second card stays hidden during game
+            const card = dealerCards[deal.cardIndex];
+            const isHidden = !deal.faceUp;
+            newVisible.dealer = [...newVisible.dealer, { ...card, isHidden }];
           }
           return newVisible;
         });
-        
-        // Then flip card to face up/down after travel animation
-        setTimeout(() => {
-          setVisibleCards(prev => {
-            const newVisible = { ...prev };
-            if (deal.target === 'player') {
-              const lastIndex = newVisible.player.length - 1;
-              newVisible.player[lastIndex] = { 
-                ...cards[deal.cardIndex], 
-                isTraveling: false, 
-                isFlipping: true 
-              };
-            } else {
-              const lastIndex = newVisible.dealer.length - 1;
-              newVisible.dealer[lastIndex] = { 
-                ...dealerCards[deal.cardIndex], 
-                isTraveling: false, 
-                isFlipping: true,
-                isHidden: !deal.faceUp  // Only dealer's 2nd card stays hidden
-              };
-            }
-            return newVisible;
-          });
-          
-          // Remove flipping flag after animation
-          setTimeout(() => {
-            setVisibleCards(prev => {
-              const newVisible = { ...prev };
-              if (deal.target === 'player') {
-                const lastIndex = newVisible.player.length - 1;
-                newVisible.player[lastIndex] = { 
-                  ...newVisible.player[lastIndex], 
-                  isFlipping: false 
-                };
-              } else {
-                const lastIndex = newVisible.dealer.length - 1;
-                newVisible.dealer[lastIndex] = { 
-                  ...newVisible.dealer[lastIndex], 
-                  isFlipping: false 
-                };
-              }
-              return newVisible;
-            });
-          }, 300);
-          
-        }, 400); // Card flips after 400ms travel time
         
         // End distribution after last card
         if (index === distributionOrder.length - 1) {
           setTimeout(() => {
             setIsDistributing(false);
-          }, 800); // Allow time for final flip
+          }, 300);
         }
-      }, index * 600); // 600ms between each card for better visibility
+      }, index * 600); // 600ms between each card
     });
   };
 
