@@ -182,6 +182,17 @@ const BlackjackGame = () => {
           
           // Show result if game ended (but only after seeing the card)
           if (response.data.game_status !== "playing") {
+            // If player busts, reveal dealer's hidden card
+            if (response.data.game_status === "player_bust") {
+              setTimeout(() => {
+                setVisibleCards(prev => ({
+                  ...prev,
+                  dealer: prev.dealer.map((card, index) => 
+                    index === 1 ? { ...card, isHidden: false } : card
+                  )
+                }));
+              }, 400);
+            }
             setTimeout(() => setShowResult(true), 800);
           }
         }, 300);
