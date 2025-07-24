@@ -128,7 +128,7 @@ const BlackjackGame = () => {
     }
   };
 
-  // Tirer (Hit) action - Animation complète depuis la pioche
+  // Tirer (Hit) action - Sans duplication
   const tirer = async () => {
     if (!gameId || isAnimating || isDistributing) return;
     
@@ -140,36 +140,35 @@ const BlackjackGame = () => {
       });
       
       const newCard = response.data.player_cards[response.data.player_cards.length - 1];
+      const cardKey = `player-hit-${Date.now()}`;
       
-      // Étape 1: Ajouter la carte en vol (face cachée)
+      // Ajouter la nouvelle carte avec animation
       setVisibleCards(prev => ({
         ...prev,
-        player: [...prev.player, { ...newCard, isTraveling: true }]
+        player: [...prev.player, { ...newCard, isTraveling: true, key: cardKey }]
       }));
       
-      // Étape 2: Après le vol, retourner la carte (face visible)
+      // Retourner la carte après le vol
       setTimeout(() => {
-        const cardIndex = visibleCards.player.length;
-        setVisibleCards(prev => {
-          const newVisible = { ...prev };
-          newVisible.player[cardIndex] = { 
-            ...newCard, 
-            isTraveling: false, 
-            isFlipping: true 
-          };
-          return newVisible;
-        });
+        setVisibleCards(prev => ({
+          ...prev,
+          player: prev.player.map(card => 
+            card.key === cardKey 
+              ? { ...card, isTraveling: false, isFlipping: true }
+              : card
+          )
+        }));
         
-        // Étape 3: Finir l'animation de retournement
+        // Finir l'animation de retournement
         setTimeout(() => {
-          setVisibleCards(prev => {
-            const newVisible = { ...prev };
-            newVisible.player[cardIndex] = { 
-              ...newCard, 
-              isFlipping: false 
-            };
-            return newVisible;
-          });
+          setVisibleCards(prev => ({
+            ...prev,
+            player: prev.player.map(card => 
+              card.key === cardKey 
+                ? { ...card, isFlipping: false }
+                : card
+            )
+          }));
           
           setGameState(response.data);
           setBalance(response.data.balance);
@@ -190,8 +189,8 @@ const BlackjackGame = () => {
             }
             setTimeout(() => setShowResult(true), 800);
           }
-        }, 300); // Fin du retournement
-      }, 400); // Fin du vol
+        }, 300);
+      }, 400);
       
     } catch (error) {
       console.error("Error hitting:", error);
