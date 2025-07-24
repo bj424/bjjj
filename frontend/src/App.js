@@ -17,87 +17,82 @@ const BlackjackGame = () => {
   const [visibleCards, setVisibleCards] = useState({ player: [], dealer: [] });
   const [editingBalance, setEditingBalance] = useState(false);
 
-  // Simulate realistic card distribution - Toutes les cartes partent face cachée puis se retournent
+  // Simulate realistic card distribution - Logique simplifiée sans duplication
   const distributeCards = (cards, dealerCards) => {
     setIsDistributing(true);
-    setVisibleCards({ player: [], dealer: [] });
     
-    // Exact casino order: player face up, dealer face up, player face up, dealer face HIDDEN
-    const distributionOrder = [
-      { target: 'player', cardIndex: 0, faceUp: true },
-      { target: 'dealer', cardIndex: 0, faceUp: true },
-      { target: 'player', cardIndex: 1, faceUp: true },
-      { target: 'dealer', cardIndex: 1, faceUp: false }
-    ];
+    // Initialiser avec les cartes réelles mais avec flags d'animation
+    const playerCardsWithAnimation = cards.map((card, index) => ({
+      ...card,
+      isTraveling: true,
+      key: `player-${Date.now()}-${index}`
+    }));
     
-    setDealingOrder(distributionOrder);
+    const dealerCardsWithAnimation = dealerCards.map((card, index) => ({
+      ...card,
+      isTraveling: true,
+      isHidden: index === 1, // Deuxième carte du croupier cachée
+      key: `dealer-${Date.now()}-${index}`
+    }));
     
-    distributionOrder.forEach((deal, index) => {
+    // Distribution immédiate avec toutes les cartes
+    setVisibleCards({
+      player: playerCardsWithAnimation,
+      dealer: dealerCardsWithAnimation
+    });
+    
+    // Animer les retournements progressivement
+    const distributionOrder = [0, 1, 2, 3]; // Ordre des cartes
+    distributionOrder.forEach((cardIndex, animIndex) => {
       setTimeout(() => {
-        // D'abord ajouter la carte face cachée (pendant le vol)
         setVisibleCards(prev => {
           const newVisible = { ...prev };
-          if (deal.target === 'player') {
-            newVisible.player = [...newVisible.player, { ...cards[deal.cardIndex], isTraveling: true }];
-          } else {
-            newVisible.dealer = [...newVisible.dealer, { ...dealerCards[deal.cardIndex], isTraveling: true }];
+          
+          if (cardIndex < 2) { // Cartes joueur
+            newVisible.player = prev.player.map((card, idx) => 
+              idx === cardIndex ? { ...card, isTraveling: false, isFlipping: true } : card
+            );
+          } else { // Cartes croupier
+            const dealerIndex = cardIndex - 2;
+            newVisible.dealer = prev.dealer.map((card, idx) => 
+              idx === dealerIndex ? { 
+                ...card, 
+                isTraveling: false, 
+                isFlipping: dealerIndex === 0 // Seule la première carte du croupier se retourne
+              } : card
+            );
           }
+          
           return newVisible;
         });
         
-        // Après le vol, retourner la carte selon la règle
+        // Terminer l'animation de flip
         setTimeout(() => {
           setVisibleCards(prev => {
             const newVisible = { ...prev };
-            if (deal.target === 'player') {
-              const lastIndex = newVisible.player.length - 1;
-              newVisible.player[lastIndex] = { 
-                ...cards[deal.cardIndex], 
-                isTraveling: false, 
-                isFlipping: true 
-              };
-            } else {
-              const lastIndex = newVisible.dealer.length - 1;
-              newVisible.dealer[lastIndex] = { 
-                ...dealerCards[deal.cardIndex], 
-                isTraveling: false, 
-                isFlipping: deal.faceUp,
-                isHidden: !deal.faceUp
-              };
+            
+            if (cardIndex < 2) { // Cartes joueur
+              newVisible.player = prev.player.map((card, idx) => 
+                idx === cardIndex ? { ...card, isFlipping: false } : card
+              );
+            } else { // Cartes croupier
+              const dealerIndex = cardIndex - 2;
+              newVisible.dealer = prev.dealer.map((card, idx) => 
+                idx === dealerIndex ? { ...card, isFlipping: false } : card
+              );
             }
+            
             return newVisible;
           });
-          
-          // Finir l'animation de retournement
-          setTimeout(() => {
-            setVisibleCards(prev => {
-              const newVisible = { ...prev };
-              if (deal.target === 'player') {
-                const lastIndex = newVisible.player.length - 1;
-                newVisible.player[lastIndex] = { 
-                  ...newVisible.player[lastIndex], 
-                  isFlipping: false 
-                };
-              } else {
-                const lastIndex = newVisible.dealer.length - 1;
-                newVisible.dealer[lastIndex] = { 
-                  ...newVisible.dealer[lastIndex], 
-                  isFlipping: false 
-                };
-              }
-              return newVisible;
-            });
-          }, 300);
-          
-        }, 400); // Retournement après 400ms de vol
+        }, 300);
         
-        // End distribution after last card
-        if (index === distributionOrder.length - 1) {
+        // Fin de distribution après la dernière carte
+        if (animIndex === distributionOrder.length - 1) {
           setTimeout(() => {
             setIsDistributing(false);
-          }, 800);
+          }, 600);
         }
-      }, index * 600); // 600ms entre chaque carte
+      }, animIndex * 600);
     });
   };
 
